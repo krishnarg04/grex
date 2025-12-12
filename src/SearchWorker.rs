@@ -10,7 +10,7 @@ use wide::*;
 pub struct SearchWorker {
     channel_vec: Vec<Sender<Vec<String>>>,
     max_threads: usize,
-    thread_holder: Vec<std::thread::JoinHandle<()>>,
+    thread_holder: Vec<tokio::task::JoinHandle<()>>,
     printer_tx: Option<Sender<PrintWorker::Match>>,
 }
 
@@ -24,11 +24,9 @@ impl SearchWorker {
         }
     }
 
-    pub fn wait_for_completion(self) {
+    pub async fn wait_for_completion(self) {
         drop(self.channel_vec);
-        for handle in self.thread_holder {
-            handle.join().unwrap();
-        }
+        //tokio::join!(self.thread_holder).await;
     }
 
     pub fn initialize_thread_and_channel(
@@ -41,8 +39,8 @@ impl SearchWorker {
             let (sender, receiver): (Sender<Vec<String>>, Receiver<Vec<String>>) = mpsc::channel();
             let cloned_pattern = pattern.clone();
             let cloned_printer_tx = printer_tx.clone();
-            self.thread_holder.push(std::thread::spawn(move || {
-                search_thread_work(receiver, cloned_pattern, cloned_printer_tx);
+            self.thread_holder.push(tokio::spawn(async move {
+                search_thread_work(receiver, cloned_pattern, cloned_printer_tx).await;
             }));
             self.channel_vec.push(sender);
         }
@@ -58,7 +56,7 @@ impl SearchWorker {
     }
 }
 
-fn search_thread_work(
+async fn search_thread_work(
     receiver: Receiver<Vec<String>>,
     pattern: String,
     printer_tx: Sender<PrintWorker::Match>,

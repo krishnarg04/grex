@@ -6,7 +6,7 @@ pub struct Match {
     pub pattern: String,
 }
 
-pub fn printer_thread(receiver: Receiver<Match>) {
+pub async fn printer_thread(receiver: Receiver<Match>) {
     while let Ok(match_data) = receiver.recv() {
         let line_with_color = highlight_pattern(
             &String::from_utf8_lossy(&match_data.line_content),
