@@ -66,6 +66,12 @@ cargo build --release
 ./target/release/grex "pattern"
 ```
 
+## Download the package
+
+```bash
+grex "pattern"
+```
+
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
